@@ -1,0 +1,10 @@
+# Vercel 배포시 제외할 파일들
+.env.local
+.env.development
+.env.production.local
+node_modules
+.git
+*.log
+.DS_Store
+coverage
+.nyc_output
