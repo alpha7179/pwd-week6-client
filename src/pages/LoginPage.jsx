@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import styled from '@emotion/styled';
-import { FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
-import { SiNaver } from 'react-icons/si';
-import { ClipLoader } from 'react-spinners';
-import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPIService } from '../services/authApi';
+import styled from '@emotion/styled';
+import { FaEye, FaEyeSlash, FaGoogle, FaUser, FaLock } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import { ClipLoader } from 'react-spinners';
 
 const LoginContainer = styled.div`
   max-width: 400px;
@@ -22,7 +21,6 @@ const Title = styled.h1`
   text-align: center;
   margin-bottom: 2rem;
   color: #333;
-  font-size: 1.75rem;
 `;
 
 const Form = styled.form`
@@ -31,24 +29,13 @@ const Form = styled.form`
   gap: 1rem;
 `;
 
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Label = styled.label`
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #555;
-`;
-
-const InputContainer = styled.div`
+const InputGroup = styled.div`
   position: relative;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   font-size: 1rem;
@@ -58,36 +45,38 @@ const Input = styled.input`
     outline: none;
     border-color: #667eea;
   }
-  
-  &.error {
-    border-color: #ff4757;
-  }
+`;
+
+const InputIcon = styled.div`
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
 `;
 
 const PasswordToggle = styled.button`
   position: absolute;
-  right: 10px;
+  right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  cursor: pointer;
   color: #666;
-  
-  &:hover {
-    color: #333;
-  }
+  cursor: pointer;
+  padding: 0.25rem;
 `;
 
 const ErrorMessage = styled.span`
   color: #ff4757;
   font-size: 0.875rem;
   margin-top: 0.25rem;
+  display: block;
 `;
 
 const SubmitButton = styled.button`
   width: 100%;
-  padding: 1rem;
+  padding: 0.75rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -96,9 +85,8 @@ const SubmitButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s;
-  margin-top: 1rem;
   
-  &:hover:not(:disabled) {
+  &:hover {
     transform: scale(1.02);
   }
   
@@ -108,66 +96,58 @@ const SubmitButton = styled.button`
   }
 `;
 
-const Divider = styled.div`
+const SocialLoginContainer = styled.div`
+  margin-top: 1.5rem;
   display: flex;
-  align-items: center;
-  margin: 1.5rem 0;
-  
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #e0e0e0;
-  }
-  
-  span {
-    margin: 0 1rem;
-    color: #666;
-    font-size: 0.875rem;
-  }
+  flex-direction: column;
+  gap: 0.75rem;
 `;
 
-const SocialButton = styled.a`
+const SocialButton = styled.button`
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  background: white;
-  color: #333;
-  text-decoration: none;
-  border-radius: 8px;
+  font-size: 1rem;
   transition: all 0.3s;
-  margin-bottom: 0.75rem;
   
   &:hover {
     border-color: #667eea;
     background: #f8f9ff;
   }
-  
-  &.google {
-    &:hover {
-      border-color: #db4437;
-      background: #fff5f5;
-    }
-  }
-  
-  &.naver {
-    &:hover {
-      border-color: #03c75a;
-      background: #f0f9f0;
-    }
-  }
-  
 `;
 
-const LinkText = styled.div`
+const Divider = styled.div`
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e0e0e0;
+  }
+  
+  span {
+    background: white;
+    padding: 0 1rem;
+    color: #666;
+  }
+`;
+
+const SignupLink = styled.div`
   text-align: center;
   margin-top: 1.5rem;
-  color: #666;
   
   a {
     color: #667eea;
@@ -179,48 +159,49 @@ const LinkText = styled.div`
   }
 `;
 
-const AlertMessage = styled.div`
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-  
-  &.error {
-    background: #ffe6e6;
-    color: #d63031;
-    border: 1px solid #fab1a0;
-  }
-`;
-
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const location = useLocation();
   
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
-  // 이미 로그인된 경우 리다이렉트
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  // URL 쿼리 파라미터에서 에러 메시지 확인
-  const errorFromUrl = searchParams.get('error');
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const onSubmit = async (data) => {
-    const result = await login(data);
-    
-    if (result.success) {
-      toast.success(result.message);
-      navigate('/dashboard', { replace: true });
-    } else {
-      toast.error(result.message);
+    setIsLoading(true);
+    try {
+      const result = await login(data.email, data.password);
+      if (result.success) {
+        toast.success('로그인 성공!');
+        navigate(from, { replace: true });
+      } else {
+        toast.error(result.message || '로그인에 실패했습니다.');
+      }
+    } catch (error) {
+      toast.error('로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await authAPIService.getGoogleAuthUrl();
+      window.location.href = response.data.url;
+    } catch (error) {
+      toast.error('Google 로그인 설정에 문제가 있습니다.');
+    }
+  };
+
+  const handleNaverLogin = async () => {
+    try {
+      const response = await authAPIService.getNaverAuthUrl();
+      window.location.href = response.data.url;
+    } catch (error) {
+      toast.error('Naver 로그인 설정에 문제가 있습니다.');
     }
   };
 
@@ -228,68 +209,55 @@ function LoginPage() {
     <LoginContainer>
       <Title>로그인</Title>
       
-      {errorFromUrl && (
-        <AlertMessage className="error">
-          {errorFromUrl === 'server_error' && '서버 오류가 발생했습니다.'}
-          {errorFromUrl === 'login_error' && '로그인 처리 중 오류가 발생했습니다.'}
-          {errorFromUrl !== 'server_error' && errorFromUrl !== 'login_error' && decodeURIComponent(errorFromUrl)}
-        </AlertMessage>
-      )}
-      
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <FormGroup>
-          <Label htmlFor="email">이메일</Label>
+        <InputGroup>
+          <InputIcon>
+            <FaUser />
+          </InputIcon>
           <Input
-            id="email"
             type="email"
-            className={errors.email ? 'error' : ''}
+            placeholder="이메일"
             {...register('email', {
-              required: '이메일을 입력해주세요.',
+              required: '이메일은 필수입니다',
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: '올바른 이메일 형식이 아닙니다.',
-              },
+                message: '올바른 이메일 형식이 아닙니다'
+              }
             })}
-            placeholder="example@email.com"
           />
-          {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
-        </FormGroup>
-
-        <FormGroup>
-          <Label htmlFor="password">비밀번호</Label>
-          <InputContainer>
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              className={errors.password ? 'error' : ''}
-              {...register('password', {
-                required: '비밀번호를 입력해주세요.',
-                minLength: {
-                  value: 6,
-                  message: '비밀번호는 최소 6자 이상이어야 합니다.',
-                },
-              })}
-              placeholder="비밀번호를 입력하세요"
-            />
-            <PasswordToggle
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </PasswordToggle>
-          </InputContainer>
-          {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
-        </FormGroup>
-
-        <SubmitButton type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <ClipLoader size={20} color="white" />
-              <span style={{ marginLeft: '0.5rem' }}>로그인 중...</span>
-            </>
-          ) : (
-            '로그인'
+          {errors.email && (
+            <ErrorMessage>{errors.email.message}</ErrorMessage>
           )}
+        </InputGroup>
+
+        <InputGroup>
+          <InputIcon>
+            <FaLock />
+          </InputIcon>
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="비밀번호"
+            {...register('password', {
+              required: '비밀번호는 필수입니다',
+              minLength: {
+                value: 6,
+                message: '비밀번호는 최소 6자 이상이어야 합니다'
+              }
+            })}
+          />
+          <PasswordToggle
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </PasswordToggle>
+          {errors.password && (
+            <ErrorMessage>{errors.password.message}</ErrorMessage>
+          )}
+        </InputGroup>
+
+        <SubmitButton type="submit" disabled={isLoading}>
+          {isLoading ? <ClipLoader size={20} color="white" /> : '로그인'}
         </SubmitButton>
       </Form>
 
@@ -297,18 +265,21 @@ function LoginPage() {
         <span>또는</span>
       </Divider>
 
-      <SocialButton href={authAPIService.getGoogleLoginUrl()} className="google">
-        <FaGoogle /> 구글로 로그인
-      </SocialButton>
+      <SocialLoginContainer>
+        <SocialButton type="button" onClick={handleGoogleLogin}>
+          <FaGoogle color="#4285F4" />
+          Google로 로그인
+        </SocialButton>
+        
+        <SocialButton type="button" onClick={handleNaverLogin}>
+          <span style={{ color: '#03C75A', fontWeight: 'bold' }}>N</span>
+          Naver로 로그인
+        </SocialButton>
+      </SocialLoginContainer>
 
-      <SocialButton href={authAPIService.getNaverLoginUrl()} className="naver">
-        <SiNaver /> 네이버로 로그인
-      </SocialButton>
-
-      <LinkText>
-        아직 계정이 없으신가요?{' '}
-        <Link to="/register">회원가입하기</Link>
-      </LinkText>
+      <SignupLink>
+        계정이 없으신가요? <Link to="/register">회원가입</Link>
+      </SignupLink>
     </LoginContainer>
   );
 }
