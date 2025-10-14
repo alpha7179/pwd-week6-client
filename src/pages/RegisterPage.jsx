@@ -195,6 +195,15 @@ function RegisterPage() {
     }
   };
 
+  const handleNaverLogin = async () => {
+    try {
+      const response = await authAPIService.getNaverAuthUrl();
+      window.location.href = response.data.url;
+    } catch (error) {
+      toast.error('Naver 로그인 설정에 문제가 있습니다.');
+    }
+  };
+
   return (
     <RegisterContainer>
       <Title>회원가입</Title>
@@ -302,6 +311,11 @@ function RegisterPage() {
         <SocialButton type="button" onClick={handleGoogleLogin}>
           <FaGoogle color="#4285F4" />
           Google로 회원가입
+        </SocialButton>
+        
+        <SocialButton type="button" onClick={handleNaverLogin}>
+          <span style={{ color: '#03C75A', fontWeight: 'bold' }}>N</span>
+          Naver로 회원가입
         </SocialButton>
       </SocialLoginContainer>
 

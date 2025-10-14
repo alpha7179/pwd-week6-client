@@ -27,9 +27,17 @@ export const authAPIService = {
     return await api.get('/api/auth/me');
   },
 
-  // OAuth 로그인 URL 생성
+  // OAuth 로그인 URL 생성 (직접 URL 반환)
   getGoogleLoginUrl: () => `${API_BASE_URL}/api/auth/google`,
   getNaverLoginUrl: () => `${API_BASE_URL}/api/auth/naver`,
+
+  // OAuth 로그인 URL 생성 (API 응답 형태로 반환 - LoginPage/RegisterPage 호환)
+  getGoogleAuthUrl: async () => {
+    return { data: { url: `${API_BASE_URL}/api/auth/google` } };
+  },
+  getNaverAuthUrl: async () => {
+    return { data: { url: `${API_BASE_URL}/api/auth/naver` } };
+  },
 
   // 관리자 전용 API
   // 모든 사용자 목록 조회
