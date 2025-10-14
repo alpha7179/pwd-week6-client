@@ -173,11 +173,11 @@ function RegisterPage() {
     setIsLoading(true);
     try {
       const result = await registerUser(data.name, data.email, data.password);
-      if (result.success) {
+      if (result && result.success) {
         toast.success('회원가입 성공!');
         navigate('/dashboard');
       } else {
-        toast.error(result.message || '회원가입에 실패했습니다.');
+        toast.error(result?.message || '회원가입에 실패했습니다.');
       }
     } catch (error) {
       toast.error('회원가입 중 오류가 발생했습니다.');

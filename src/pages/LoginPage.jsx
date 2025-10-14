@@ -174,11 +174,11 @@ function LoginPage() {
     setIsLoading(true);
     try {
       const result = await login(data.email, data.password);
-      if (result.success) {
+      if (result && result.success) {
         toast.success('로그인 성공!');
         navigate(from, { replace: true });
       } else {
-        toast.error(result.message || '로그인에 실패했습니다.');
+        toast.error(result?.message || '로그인에 실패했습니다.');
       }
     } catch (error) {
       toast.error('로그인 중 오류가 발생했습니다.');

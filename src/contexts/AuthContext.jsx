@@ -38,9 +38,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (credentials) => {
+  const login = async (email, password) => {
     try {
-      const response = await authAPIService.login(credentials);
+      const response = await authAPIService.login({ email, password });
       if (response.data.success) {
         setUser(response.data.data.user);
         setIsAuthenticated(true);
@@ -52,9 +52,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData) => {
+  const register = async (name, email, password) => {
     try {
-      const response = await authAPIService.register(userData);
+      const response = await authAPIService.register({ name, email, password });
       if (response.data.success) {
         setUser(response.data.data.user);
         setIsAuthenticated(true);
