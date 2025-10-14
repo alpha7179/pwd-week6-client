@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import styled from '@emotion/styled';
 import { toast } from 'react-toastify';
 import { FaCheckCircle } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 const FormContainer = styled.div`
   background: white;
@@ -121,28 +122,48 @@ const SuccessMessage = styled.div`
 
 function SubmitRestaurant() {
   const [submitted, setSubmitted] = useState(false);
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm();
+  const { user } = useAuth(); // 로그인한 사용자 정보
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
+    defaultValues: {
+      submitterName: user?.name || '',
+      submitterEmail: user?.email || ''
+    }
+  });
 
   const onSubmit = async (data) => {
     try {
-      // Netlify Forms로 제출
-      const response = await fetch("/", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          "form-name": "restaurant-submit",
-          ...data
-        }).toString()
-      });
+      // 서버 API로 제출
+      const { submissionAPI } = await import('../services/api');
       
-      if (response.ok) {
+      // 추천 메뉴를 배열로 변환
+      const recommendedMenu = data.recommendedMenu 
+        ? data.recommendedMenu.split(',').map(item => item.trim()).filter(Boolean)
+        : [];
+
+      const submissionData = {
+        restaurantName: data.restaurantName,
+        category: data.category,
+        location: data.location,
+        priceRange: data.priceRange || '정보 없음',
+        recommendedMenu,
+        review: data.review || '',
+        submitterName: data.submitterName || '익명',
+        submitterEmail: data.submitterEmail || ''
+      };
+
+      console.log('제출할 데이터:', submissionData);
+      
+      const response = await submissionAPI.createSubmission(submissionData);
+      
+      if (response) {
         setSubmitted(true);
         toast.success('맛집이 성공적으로 제보되었습니다! 🎉');
         reset();
         setTimeout(() => setSubmitted(false), 5000);
       }
     } catch (error) {
-      toast.error('제출 중 오류가 발생했습니다.');
+      console.error('제출 오류:', error);
+      toast.error(error.userMessage || '제출 중 오류가 발생했습니다.');
     }
   };
 
@@ -251,7 +272,9 @@ function SubmitRestaurant() {
           <Input
             id="submitterName"
             {...register("submitterName")}
-            placeholder="선택사항"
+            value={user?.name || ''}
+            readOnly
+            style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
           />
         </FormGroup>
 
@@ -260,17 +283,11 @@ function SubmitRestaurant() {
           <Input
             id="submitterEmail"
             type="email"
-            {...register("submitterEmail", {
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "올바른 이메일 형식이 아닙니다"
-              }
-            })}
-            placeholder="선택사항 (답변받을 이메일)"
+            {...register("submitterEmail")}
+            value={user?.email || ''}
+            readOnly
+            style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
           />
-          {errors.submitterEmail && (
-            <ErrorMessage>{errors.submitterEmail.message}</ErrorMessage>
-          )}
         </FormGroup>
 
         <SubmitButton type="submit" disabled={isSubmitting}>
